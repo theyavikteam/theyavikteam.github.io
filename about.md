@@ -3,13 +3,12 @@ layout: page
 title: About
 permalink: /about/
 ---
+Soy Fco. Javier Rodríguez Ponce
 
-Some information about you!
+De momento Android Senior Developer (Analyst & Architect) y Graduado en Ingeniería Informática - Tecnologías Informáticas por la Universidad de Sevilla. 
 
-### More Information
+Uso este espacio para contar sobre lo que se, lo que aprendo y lo que investigo en mi día a día tanto a nivel profesional como por afición en mis ratos libres.
 
-A place to include any other types of information that you'd like to include about yourself.
+Aunque la mayor parte del tiempo escriba en castellano probablemente me anime en algún que otro post con el inglés (para ir practicando).
 
-### Contact me
-
-[email@domain.com](mailto:email@domain.com)
+Espero que os resulte interesante y os ayude como a mi.
