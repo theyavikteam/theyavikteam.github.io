@@ -19,8 +19,8 @@ A lo largo del desarrollo de una app nos llevamos gran parte del tiempo arrancan
 
 Empezamos creando un proyecto de cero con Android Studio y habilitando la compatibitilidad con Kotlin. Una vez creado pasamos a integrar la dependencia de Realm. Primero añadimos el plugin con la versión más actual en el archivo *build.gradle* del proyecto:
 
-<pre><code class="groovy">classpath "io.realm:realm-gradle-plugin:5.2.0"
-</code></pre>
+	<pre><code class="groovy">classpath "io.realm:realm-gradle-plugin:5.2.0"
+	</code></pre>
 
 Y a continuación en el fichero *build.gradle* del módulo de la aplicación aplicamos dicho plugin:
 
@@ -95,15 +95,76 @@ Actualizamos la edad a la persona y vamos a mostrar por pantalla y ejecutamos nu
         }
 </code></pre>
 
-Puuuuummm!!!!! Instacrashhhh!!!!!
+Puuuuummm!!!!! Instacrashhhh!!!!! ¿Que ha pasado? ¿Que me dice la consola?
 
-¿Que ha pasado? ¿Que me dice la consola?
+![2018-6-6_01](https://raw.githubusercontent.com/theyavikteam/theyavikteam.github.io/master/images/2018-6-6_01.png)
 
-![2018-6-6_01](https://github.com/theyavikteam/theyavikteam.github.io/tree/master/images/2018-6-6_01.png)
+Básicamente hemos cambiado el esquema de nuestra base de datos añadiendo la edad a la clase *Person*. El log es tan chivato que me dice como arreglar semejante destrozo. **Una migración**. ¡Vamos a ello!:
 
+Creamos una clase que implemente la interfaz *RealmMigration* y sobreescribimos el método *migrate*. Aquí 
 
+<pre><code class="kotlin">class MyMigration : RealmMigration {
+    override fun migrate(realm: DynamicRealm, oldVersion: Long, newVersion: Long) {
+        if (DatabaseConstants.FIRST_VERSION == oldVersion) {
+            realm.schema.get("Person")?.addField("age", Int::class.java)
+            oldVersion.inc()
+        }
+    }
+}
+</code></pre>
+
+Y ahora vamos a modificar la configuración de *Realm* para hacer uso de ella:
+
+<pre><code class="kotlin">Realm.setDefaultConfiguration(RealmConfiguration.Builder()
+                .name(DatabaseConstants.NAME)
+                .schemaVersion(DatabaseConstants.SECOND_VERSION)
+                .migration(MyMigration())
+                .build())
+</code></pre>
+
+¡Y voilá! Ya tenemos nuestra aplicación corriendo de nuevo.
+
+Podéis ver el ejemplo hasta aquí: [Second version](https://github.com/theyavikteam/post_examples/tree/post/20180606-realmmigration/second_version)
 
 ## 3 - Además de personas, los perros tienen derecho a existir
+
+Y cómo los perros también tiene derecho a existir en nuestra base de datos vamos a definir una muy sencilla clase para ellos:
+
+<pre><code class="kotlin">open class Dog(@PrimaryKey var name: String= "") : RealmObject()
+</code></pre>
+
+Damos de alta un perro en la base de datos, consultamos por él y lo intentamos desplegar en la pantalla de nuestro dispositivo...:
+<pre><code class="kotlin">db.beginTransaction()
+db.copyToRealmOrUpdate(Dog("Chiki"))
+db.commitTransaction()
+val firstDog = db.where(Dog::class.java).findFirst()
+label.text = firstDog?.name)
+</code></pre>
+
+Puuuuummm!!!!! Instacrashhhh!!!!! ¿Que ha pasado? ¿Que me dice la consola?
+
+![2018-6-6_02](https://raw.githubusercontent.com/theyavikteam/theyavikteam.github.io/master/images/2018-6-6_02.png)
+
+Vaya, no me había dado cuenta que hemos añadido una tabla más en nuestra base de datos. Necesito ampliar la migración para contemplar este caso y cambiar la versión al esquema en la configuración de la base de datos:
+
+<pre><code class="kotlin">class MyMigration: RealmMigration{
+    override fun migrate(realm: DynamicRealm, oldVersion: Long, newVersion: Long) {
+        val realmSchema = realm.schema
+        if (DatabaseConstants.FIRST_VERSION == oldVersion) {
+            realmSchema.get("Person")?.addField("age", Int::class.java)
+            oldVersion.inc()
+        }
+        if (DatabaseConstants.SECOND_VERSION == oldVersion){
+            realmSchema.create("Dog").addField("name", String::class.java, FieldAttribute.PRIMARY_KEY, FieldAttribute.REQUIRED)
+            oldVersion.inc()
+        }
+    }
+}
+</code></pre>
+
+Si volvemos a ejecutar nuestra aplicación ya no tendremos ningún tipo de problema.
+
+Podéis ver el ejemplo hasta aquí: [Third version](https://github.com/theyavikteam/post_examples/tree/post/20180606-realmmigration/third_version)
 
 ## 4 - ¿Y si las personas tienen un perro de mascota?
 
