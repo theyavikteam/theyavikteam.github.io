@@ -81,14 +81,14 @@ En primer lugar añadimos la edad al objeto *Person*:
 
 Actualizamos la edad a la persona y vamos a mostrar por pantalla y ejecutamos nuestra aplicación...:
 
-		val db = Realm.getDefaultInstance()
-		db.beginTransaction()
-		db.copyToRealmOrUpdate(Person("00000001R", "Javi", "Rodríguez", 28))
-		db.commitTransaction()
-		val firstPerson = db.where(Person::class.java).findFirst()
-		label.text = firstPerson?.let {
-		    it.surname + ", " + it.name + ": " + it.age + " - " + it.identityId
-		}
+	val db = Realm.getDefaultInstance()
+	db.beginTransaction()
+	db.copyToRealmOrUpdate(Person("00000001R", "Javi", "Rodríguez", 28))
+	db.commitTransaction()
+	val firstPerson = db.where(Person::class.java).findFirst()
+	label.text = firstPerson?.let {
+	    it.surname + ", " + it.name + ": " + it.age + " - " + it.identityId
+	}
 
 
 Puuuuummm!!!!! Instacrashhhh!!!!! ¿Que ha pasado? ¿Que me dice la consola?
@@ -99,24 +99,22 @@ Básicamente hemos cambiado el esquema de nuestra base de datos añadiendo la ed
 
 Creamos una clase que implemente la interfaz *RealmMigration* y sobreescribimos el método *migrate*. Aquí 
 
-<pre><code class="kotlin">class MyMigration : RealmMigration {
-    override fun migrate(realm: DynamicRealm, oldVersion: Long, newVersion: Long) {
-        if (DatabaseConstants.FIRST_VERSION == oldVersion) {
-            realm.schema.get("Person")?.addField("age", Int::class.java)
-            oldVersion.inc()
-        }
-    }
-}
-</code></pre>
+	class MyMigration : RealmMigration {
+	    override fun migrate(realm: DynamicRealm, oldVersion: Long, newVersion: Long) {
+	        if (DatabaseConstants.FIRST_VERSION == oldVersion) {
+	            realm.schema.get("Person")?.addField("age", Int::class.java)
+	            oldVersion.inc()
+	        }
+	    }
+	}
 
 Y ahora vamos a modificar la configuración de *Realm* para hacer uso de ella:
 
-<pre><code class="kotlin">Realm.setDefaultConfiguration(RealmConfiguration.Builder()
-                .name(DatabaseConstants.NAME)
-                .schemaVersion(DatabaseConstants.SECOND_VERSION)
-                .migration(MyMigration())
-                .build())
-</code></pre>
+	Realm.setDefaultConfiguration(RealmConfiguration.Builder()
+	                .name(DatabaseConstants.NAME)
+	                .schemaVersion(DatabaseConstants.SECOND_VERSION)
+	                .migration(MyMigration())
+	                .build())
 
 ¡Y voilá! Ya tenemos nuestra aplicación corriendo de nuevo.
 
@@ -126,16 +124,14 @@ Podéis ver el ejemplo hasta aquí: [Second version](https://github.com/theyavik
 
 Y cómo los perros también tiene derecho a existir en nuestra base de datos vamos a definir una muy sencilla clase para ellos:
 
-<pre><code class="kotlin">open class Dog(@PrimaryKey var name: String= "") : RealmObject()
-</code></pre>
+	open class Dog(@PrimaryKey var name: String= "") : RealmObject()
 
 Damos de alta un perro en la base de datos, consultamos por él y lo intentamos desplegar en la pantalla de nuestro dispositivo...:
-<pre><code class="kotlin">db.beginTransaction()
-db.copyToRealmOrUpdate(Dog("Chiki"))
-db.commitTransaction()
-val firstDog = db.where(Dog::class.java).findFirst()
-label.text = firstDog?.name)
-</code></pre>
+	db.beginTransaction()
+	db.copyToRealmOrUpdate(Dog("Chiki"))
+	db.commitTransaction()
+	val firstDog = db.where(Dog::class.java).findFirst()
+	label.text = firstDog?.name)
 
 Puuuuummm!!!!! Instacrashhhh!!!!! ¿Que ha pasado? ¿Que me dice la consola?
 
@@ -143,20 +139,19 @@ Puuuuummm!!!!! Instacrashhhh!!!!! ¿Que ha pasado? ¿Que me dice la consola?
 
 Vaya, no me había dado cuenta que hemos añadido una tabla más en nuestra base de datos. Necesito ampliar la migración para contemplar este caso y cambiar la versión al esquema en la configuración de la base de datos:
 
-<pre><code class="kotlin">class MyMigration: RealmMigration{
-    override fun migrate(realm: DynamicRealm, oldVersion: Long, newVersion: Long) {
-        val realmSchema = realm.schema
-        if (DatabaseConstants.FIRST_VERSION == oldVersion) {
-            realmSchema.get("Person")?.addField("age", Int::class.java)
-            oldVersion.inc()
-        }
-        if (DatabaseConstants.SECOND_VERSION == oldVersion){
-            realmSchema.create("Dog").addField("name", String::class.java, FieldAttribute.PRIMARY_KEY, FieldAttribute.REQUIRED)
-            oldVersion.inc()
-        }
-    }
-}
-</code></pre>
+	class MyMigration: RealmMigration{
+	    override fun migrate(realm: DynamicRealm, oldVersion: Long, newVersion: Long) {
+	        val realmSchema = realm.schema
+	        if (DatabaseConstants.FIRST_VERSION == oldVersion) {
+	            realmSchema.get("Person")?.addField("age", Int::class.java)
+	            oldVersion.inc()
+	        }
+	        if (DatabaseConstants.SECOND_VERSION == oldVersion){
+	            realmSchema.create("Dog").addField("name", String::class.java, FieldAttribute.PRIMARY_KEY, FieldAttribute.REQUIRED)
+	            oldVersion.inc()
+	        }
+	    }
+	}
 
 Si volvemos a ejecutar nuestra aplicación ya no tendremos ningún tipo de problema.
 
